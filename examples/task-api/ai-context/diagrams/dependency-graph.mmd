@@ -1,0 +1,7 @@
+flowchart LR
+  package[package.json] --> server[src/server.js]
+  server --> router[src/router.js]
+  router --> store[src/store.js]
+  store --> crypto[node:crypto randomUUID]
+  server --> http[node:http createServer]
+  agents[AGENTS.md and wrappers] --> context[ai-context]

@@ -1,0 +1,70 @@
+context_schema_version: "1.0"
+contextum_version: 0.1.0
+repository:
+  name: task-api
+  type: node
+  primary_language: JavaScript
+  package_manager: npm
+  detected_capabilities:
+    - application code
+    - package-managed project
+    - HTTP REST API
+  monorepo: false
+context_maturity:
+  level: auto_generated
+  needs_human_review: true
+context_quality:
+  completeness: 55
+  runtime_accuracy: 70
+  business_mapping: 55
+  integration_mapping: 60
+  operational_safety: 45
+confidence:
+  technical: medium
+  business: low
+  runtime: medium
+entrypoints:
+  - path: src/server.js
+    kind: HTTP server
+    evidence: package.json scripts start/dev execute node src/server.js
+business_features:
+  - task CRUD API
+  - health check
+integrations:
+  inbound:
+    - HTTP JSON API
+  outbound: []
+data_stores:
+  - in-memory Map in src/store.js
+runtime:
+  commands:
+    install: npm install
+    build: not defined
+    test: not defined
+    lint: not defined
+    dev: npm run dev
+    start: npm start
+    deploy: not defined
+  environment:
+    PORT: optional HTTP port, defaults to 3000
+signals:
+  has_docker: false
+  has_ci: false
+  has_infra: false
+  has_tests: false
+  has_api_routes: true
+  top_level_dirs:
+    - .github
+    - ai-context
+    - src
+staleness:
+  stale_score: 0
+  indicators:
+    - source code changed without context update
+    - runtime config changed
+    - dependency graph changed
+    - API contract changed
+freshness:
+  generated_at: 2026-06-03
+  generated_by: contextum
+  source: repository scan

@@ -1,0 +1,42 @@
+{
+  "generated_by": "contextum graph",
+  "note": "Heuristic export-symbol index (static name extraction). Approximate — verify against code.",
+  "file_count": 2,
+  "symbol_count": 6,
+  "files": [
+    {
+      "file": "src/router.js",
+      "symbols": [
+        {
+          "name": "route",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "file": "src/store.js",
+      "symbols": [
+        {
+          "name": "createTask",
+          "kind": "function"
+        },
+        {
+          "name": "deleteTask",
+          "kind": "function"
+        },
+        {
+          "name": "getTask",
+          "kind": "function"
+        },
+        {
+          "name": "listTasks",
+          "kind": "function"
+        },
+        {
+          "name": "updateTask",
+          "kind": "function"
+        }
+      ]
+    }
+  ]
+}

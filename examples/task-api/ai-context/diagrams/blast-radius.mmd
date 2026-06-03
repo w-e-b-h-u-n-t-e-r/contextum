@@ -1,0 +1,6 @@
+flowchart TD
+  RouterChange[src/router.js change] --> HttpContract[HTTP routes/status/JSON contract]
+  StoreChange[src/store.js change] --> TaskShape[Task object shape and memory semantics]
+  ServerChange[src/server.js change] --> Runtime[Startup port and 500 handling]
+  HttpContract --> UnknownClients[UNKNOWN downstream HTTP clients]
+  TaskShape --> HttpContract

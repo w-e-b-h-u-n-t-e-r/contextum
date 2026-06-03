@@ -1,0 +1,52 @@
+{
+  "name": "contextum",
+  "version": "0.1.0",
+  "description": "Persistent engineering memory for AI-native software development. Contextum builds and validates a structured, machine-readable AI Context Layer for any repository.",
+  "type": "module",
+  "bin": {
+    "contextum": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "start": "node dist/cli.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "ai",
+    "context",
+    "agents",
+    "engineering-memory",
+    "cli",
+    "agents.md",
+    "codex",
+    "claude",
+    "cursor",
+    "copilot"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "cac": "^6.7.14",
+    "dependency-cruiser": "^16.4.0",
+    "fs-extra": "^11.2.0",
+    "globby": "^14.0.2",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.6.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.17.10",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

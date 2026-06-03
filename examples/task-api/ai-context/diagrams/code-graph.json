@@ -1,0 +1,23 @@
+{
+  "generated_by": "contextum graph",
+  "engine": "dependency-cruiser",
+  "granularity": "file",
+  "note": "File-level dependency graph produced by dependency-cruiser. Verify against code.",
+  "nodes": [
+    "src/router.js",
+    "src/server.js",
+    "src/store.js"
+  ],
+  "edges": [
+    {
+      "from": "src/router.js",
+      "to": "src/store.js",
+      "weight": 1
+    },
+    {
+      "from": "src/server.js",
+      "to": "src/router.js",
+      "weight": 1
+    }
+  ]
+}

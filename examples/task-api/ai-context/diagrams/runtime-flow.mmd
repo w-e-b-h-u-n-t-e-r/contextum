@@ -1,0 +1,6 @@
+flowchart TD
+  Client[HTTP client] --> Server[src/server.js]
+  Server --> Router[src/router.js]
+  Router --> Store[(src/store.js in-memory Map)]
+  Store --> Router
+  Router --> Client

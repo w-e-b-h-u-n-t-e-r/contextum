@@ -1,0 +1,8 @@
+# Codex — Contextum wrapper
+
+This repository uses **Contextum**. Do not duplicate instructions here.
+
+**Read `AGENTS.md` (the canonical source of truth) and the
+`ai-context/` directory before changing code.**
+
+Follow the read/update protocol defined in `AGENTS.md`.
