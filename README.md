@@ -1,5 +1,9 @@
 # Contextum
 
+[![npm](https://img.shields.io/npm/v/contextum)](https://www.npmjs.com/package/contextum)
+[![node](https://img.shields.io/node/v/contextum)](https://nodejs.org)
+[![license](https://img.shields.io/npm/l/contextum)](./LICENSE)
+
 **Persistent engineering memory and a multi-agent coordination center for AI-native development.**
 
 Contextum builds a structured, machine-readable **AI Context Layer** inside any repository,
@@ -30,13 +34,89 @@ agents a durable place to record what they are doing right now.
 
 ## Install
 
+Requires **Node.js 18+**. Works on Linux, macOS, and Windows.
+
+### Globally (recommended)
+
 ```bash
 npm install -g contextum
-# or run without installing
+contextum --version        # contextum/0.2.0
+```
+
+A global install also produces the shortest MCP config: the generated launcher is a bare
+`contextum`, with no `npx` round-trip on every agent start.
+
+### Without installing
+
+```bash
+npx contextum setup --cwd .
+```
+
+Every command works the same way through `npx contextum …`.
+
+### As a project dev dependency
+
+```bash
+npm install -D contextum
 npx contextum setup
 ```
 
-Requires Node.js 18+. Works on Linux, macOS, and Windows.
+The installer detects the local binary and writes `npx contextum` as the launcher, so
+teammates get the same version pinned by your lockfile.
+
+### Set up a repository
+
+```bash
+cd <your-repo>
+contextum setup            # interactive; add --yes for CI
+contextum doctor           # see where the context stands
+```
+
+Safe on repositories that already have `AGENTS.md`, `CLAUDE.md`, `.claude/`, Cursor rules,
+or their own `ai-context/` — existing files are skipped, never overwritten. See
+[Safe adoption](#13-safe-adoption-on-an-existing-ai-driven-repo).
+
+### Connect the MCP server
+
+`contextum setup` already wrote `.mcp.json` in the repository. Open Claude Code there and
+run `/mcp` to approve and inspect the server — nothing else is required, and every Claude
+profile opened in that repository picks up the same config.
+
+To register it explicitly, or in another scope:
+
+```bash
+claude mcp add --scope project contextum -- contextum mcp --cwd "$PWD"
+claude mcp add --scope user    contextum -- contextum mcp --cwd "$PWD"
+```
+
+For a second Claude account on the same machine, start it with its own config directory —
+the project `.mcp.json` is shared, the credentials are not:
+
+```bash
+CLAUDE_CONFIG_DIR="$HOME/.config/claude-profiles/secondary" claude
+```
+
+Codex and any other MCP-capable client connect to the same stdio command:
+
+```bash
+contextum mcp --cwd <repo-path>
+```
+
+### Verify the install
+
+```bash
+contextum doctor --cwd <repo-path>
+
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+  | contextum mcp --cwd <repo-path>          # expect 19 tools
+```
+
+### Update and remove
+
+```bash
+npm update -g contextum
+npm uninstall -g contextum     # leaves ai-context/ and .contextum/ untouched
+```
 
 ---
 
