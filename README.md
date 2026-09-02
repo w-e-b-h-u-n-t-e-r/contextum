@@ -1,30 +1,30 @@
 # Contextum
 
-**Persistent engineering memory for AI-native software development.**
+**Persistent engineering memory and a multi-agent coordination center for AI-native development.**
 
-Contextum builds and maintains a structured, machine-readable **AI Context Layer**
-inside any repository, so AI coding agents — Claude, Codex, Cursor, Copilot, Gemini,
-and others — stop rediscovering the same codebase on every session.
+Contextum builds a structured, machine-readable **AI Context Layer** inside any repository,
+then exposes it — plus a shared task/lock/state store — over **MCP**, so several coding
+agents (two Claude profiles, a Codex reviewer, Cursor, Copilot, Gemini) work from the same
+memory instead of rediscovering the codebase on every session.
 
-It is **not** a docs generator, **not** RAG, and **not** repository indexing. It is the
-foundation layer that makes an existing engineering system safe and cheap for AI agents
-to work in:
+It is **not** a docs generator, **not** RAG, and **not** repository indexing.
 
 ```
-add Contextum to your repo  →  agents read ai-context/  →  faster, safer, cheaper changes
+contextum setup  →  agents read ai-context/  →  agents coordinate through .contextum/
+                 →  faster, safer, cheaper changes
 ```
 
 ---
 
 ## Why it exists
 
-Without a context layer, every agent session re-spends tokens and time inferring the
-same things: what the repo does, where features live, which integrations exist, which
-contracts must not break, which files are high-risk. That causes wasted tokens, unstable
-reasoning, duplicated code, and unsafe edits.
+Without a context layer, every agent session re-spends tokens inferring the same things:
+what the repo does, where features live, which contracts must not break, which files are
+high-risk. Without a coordination layer, two agents in one repository silently overwrite
+each other's work and each other's assumptions.
 
-Contextum captures the answers **once**, keeps them in Git next to the code, and makes
-agents read them before they act — then keep them up to date afterwards.
+Contextum captures the answers **once**, keeps them in Git next to the code, and gives
+agents a durable place to record what they are doing right now.
 
 ---
 
@@ -33,37 +33,116 @@ agents read them before they act — then keep them up to date afterwards.
 ```bash
 npm install -g contextum
 # or run without installing
-npx contextum init
+npx contextum setup
 ```
 
-Requires Node.js 18+.
+Requires Node.js 18+. Works on Linux, macOS, and Windows.
 
 ---
 
 ## Quick start
 
+One command sets up everything and is safe to run on a repository that already has AI files:
+
 ```bash
-contextum init --agent-pack   # write AGENTS.md + ai-context/ + tool wrappers + Claude agent pack
-contextum fill --agent claude # let an AI agent fill the context from the real code (optional)
-contextum doctor              # honest readiness scorecard
-contextum validate            # structural validation (CI-friendly; exits non-zero on errors)
-contextum setup               # one-command setup: context + center + project MCP config
-contextum center init         # create local multi-agent coordination state
-contextum mcp install         # write project .mcp.json for Claude/Codex shared memory
-contextum mcp                 # start MCP server over stdio
+contextum setup --cwd <repo-path>          # interactive
+contextum setup --cwd <repo-path> --yes    # CI / scripted
+```
+
+It writes the context layer, the agent pack, the multi-agent center, and the project MCP
+config. Existing files are **skipped**, never overwritten, unless you pass `--force`.
+
+Then check the result and let an agent fill the templates from real code:
+
+```bash
+contextum doctor     # readiness scorecard
+contextum fill --agent claude
+contextum validate   # exits non-zero on structural errors (CI-friendly)
 ```
 
 ---
 
-## What Contextum builds
+## What gets created
 
-Contextum produces several layers. Each one answers a different question an agent (or a
-new teammate) would otherwise have to re-derive.
+```text
+AGENTS.md                       # canonical instructions (source of truth)
+CLAUDE.md / CODEX.md / GEMINI.md
+.cursor/rules/contextum.mdc
+.github/copilot-instructions.md
+.aiassistant/rules.md
+.mcp.json                       # project MCP server, shared by every agent
+.claude/
+  skills/context-orientation/SKILL.md
+  agents/{context-auditor,implementation-agent,reviewer,context-maintainer}.md
+ai-context/                     # durable engineering memory (in Git)
+  context.yml
+  README.md  code-map.md  business-features.md  integrations.md
+  runtime.md  data-model.md  architecture-flows.md  change-impact.md
+  repository-boundaries.md  decisions.md  relationships.md  unknowns.md
+  lifecycle.md  freshness.md  agent-workflows.md
+  context-index.json            # vector-DB-ready export
+  diagrams/
+    runtime-flow.mmd  dependency-graph.mmd  blast-radius.mmd
+    code-graph.mmd  code-graph.json  code-symbols.json
+.contextum/                     # operational state (mostly gitignored)
+  center.yml  project.json  mcp.json  .gitignore
+  tasks.json  agents.json  locks.json  execution-state.json  events.jsonl
+  schemas/
+```
 
-### 1. The context layer — `ai-context/`
+---
 
-Human- and machine-readable engineering memory. Markdown files for understanding plus a
-machine-readable index:
+## Feature map — what each piece is for
+
+| Capability | Problem it solves | Where it lives |
+| --- | --- | --- |
+| **Context layer** | Agents re-derive the same architecture every session | `ai-context/` |
+| **Agent pack** | Every tool needs its own instruction file, and they drift apart | `AGENTS.md` + thin wrappers + `.claude/` |
+| **Code graph + symbol map** | Agents scan the whole repo to find one function | `ai-context/diagrams/` |
+| **Relationship layer** | Non-obvious coupling lives only in a senior engineer's head | `ai-context/relationships.md` |
+| **Context index** | You want semantic retrieval later without re-modelling anything | `ai-context/context-index.json` |
+| **Multi-agent center** | Two agents claim the same work and overwrite each other | `.contextum/` |
+| **Execution state** | Long sessions blow up the context window with transcript history | `.contextum/execution-state.json` |
+| **MCP server** | Each agent has its own private view of the repository | `contextum mcp` |
+| **Doctor / validate** | "We have docs" is not the same as "the docs are true" | `contextum doctor`, `contextum validate` |
+
+---
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `contextum setup` | One command: context layer + agent pack + `.contextum/` + project MCP config. Interactive unless `--yes`. |
+| `contextum init` | Generate `ai-context/`, canonical `AGENTS.md`, tool wrappers, code graph, symbol map. `--agent-pack` adds Claude skills + role prompts. Idempotent. |
+| `contextum generate` | Generate/update the `ai-context/` documents only. |
+| `contextum agents` | Write `AGENTS.md` (source of truth) + every tool-specific wrapper. |
+| `contextum skills` | Write the Claude-compatible orientation skill and role prompts under `.claude/`. |
+| `contextum graph` | Build the dependency graph (`code-graph.mmd` + `.json`) and the symbol map. |
+| `contextum index` | Build the vector-DB-ready context index. No database required. |
+| `contextum center init` | Create `.contextum/` — tasks, agent sessions, locks, execution state, events, schemas. |
+| `contextum mcp install` | Write/update project `.mcp.json` with a launcher that resolves on this machine. |
+| `contextum mcp` | Start the MCP server over stdio. |
+| `contextum fill` | Drive an AI agent to fill the context from the real repository. |
+| `contextum validate` | Validate structure: required files, valid `context.yml`, freshness, diagrams, links. Exits `1` on errors. |
+| `contextum doctor` | Structure readiness, context quality, agent readiness, trust state, next actions. |
+
+**Flags**
+
+| Flag | Applies to | Meaning |
+| --- | --- | --- |
+| `--cwd <dir>` | all | Target repository root (default: current directory) |
+| `--force` | `init`, `generate`, `agents`, `skills`, `graph`, `index`, `center init`, `mcp install`, `setup` | Overwrite existing Contextum-managed files |
+| `--yes` | `setup` | Run non-interactively |
+| `--command <cmd>` | `setup`, `mcp install` | Launcher to write into `.mcp.json` instead of the detected one |
+| `--agent-pack` | `init` | Also write Claude skills and role prompts |
+| `--format json\|ndjson` | `index` | Output format for the context index |
+| `--agent claude\|codex`, `--agent-command`, `--agent-sandbox`, `--bypass-agent-sandbox`, `--dry-run` | `fill` | Which agent to drive and how |
+
+---
+
+## 1. The context layer — `ai-context/`
+
+Human- and machine-readable engineering memory, kept in Git next to the code.
 
 | File | Answers |
 | --- | --- |
@@ -77,218 +156,350 @@ machine-readable index:
 | `architecture-flows.md` | Runtime flows (Mermaid). |
 | `change-impact.md` | Blast radius of risky changes. |
 | `repository-boundaries.md` | What belongs here vs. elsewhere. |
-| `decisions.md` | Architecture Decision Records (ADRs). |
-| `relationships.md` | Non-obvious cross-cutting relationships (see below). |
+| `decisions.md` | Architecture Decision Records. |
+| `relationships.md` | Non-obvious cross-cutting relationships. |
 | `unknowns.md` | Open questions — engineering backlog, not failure. |
-| `lifecycle.md` | Trust state: auto_generated → reviewed → trusted → stale → deprecated. |
+| `lifecycle.md` | Trust state: `auto_generated → reviewed → trusted → stale → deprecated`. |
 | `freshness.md` | When/how the layer was last validated, plus a changelog. |
 | `agent-workflows.md` | How multiple agents cooperate. |
 
-### 2. The agent pack — `AGENTS.md` + wrappers + `.claude/`
+---
 
-`AGENTS.md` is the **single source of truth**. Every tool-specific file (`CLAUDE.md`,
-`CODEX.md`, `GEMINI.md`, Cursor/Copilot/JetBrains rules, …) is a short wrapper that points
-back to it — instructions are never duplicated.
+## 2. The agent pack — `AGENTS.md` + wrappers + `.claude/`
 
-With `--agent-pack`, Contextum also writes a Claude-compatible pack under `.claude/`:
+`AGENTS.md` is the **single source of truth**. `CLAUDE.md`, `CODEX.md`, `GEMINI.md`,
+Cursor/Copilot/JetBrains rules are short wrappers that point back to it, so instructions
+are never duplicated and never drift.
 
-- `.claude/skills/context-orientation/SKILL.md` — an orientation skill that tells an agent
-  which context to read, in what order, for a given task, instead of scanning everything.
-- `.claude/agents/*.md` — role prompts (context-auditor, implementation-agent, a
-  **review-only** reviewer, context-maintainer).
+With `--agent-pack`, Contextum also writes:
 
-### 3. The code graph + symbol map — `ai-context/diagrams/`
+- `.claude/skills/context-orientation/SKILL.md` — tells an agent which context to read, in
+  what order, for a given task, instead of scanning everything.
+- `.claude/agents/*.md` — role prompts: `context-auditor`, `implementation-agent`, a
+  **review-only** `reviewer`, and `context-maintainer`.
+
+---
+
+## 3. The code graph + symbol map — `ai-context/diagrams/`
 
 - `code-graph.json` / `code-graph.mmd` — a real dependency graph built with
   **dependency-cruiser** (file-level edges in JSON, a directory-bucketed Mermaid overview),
-  with a zero-dependency heuristic fallback when dependency-cruiser is unavailable.
-- `code-symbols.json` — a semantic symbol index: which functions, classes, types, and
-  constants are exported by each file, so an agent can find code by name.
+  with a zero-dependency heuristic fallback.
+- `code-symbols.json` — which functions, classes, types, and constants each file exports,
+  so an agent can find code by name.
 
-Agents are told to navigate via these instead of scanning the whole repository.
+Agents are instructed to navigate via these instead of scanning the repository.
 
-### 4. The relationship layer — `ai-context/relationships.md`
+---
 
-First-class, self-contained entries for the **non-obvious** connections that are not
-visible from imports or types: shared invariants, implicit contracts, cause/effect across
-modules, hidden coupling, and cross-domain analogies. Structural import edges are *not*
-duplicated here — those live in the code graph. This is the understanding an experienced
-engineer carries in their head; Contextum gives it a home.
+## 4. The relationship layer — `ai-context/relationships.md`
 
-### 5. The context index — `ai-context/context-index.json` (vector-DB-ready)
+First-class entries for the **non-obvious** connections that imports and types cannot show:
+shared invariants, implicit contracts, cause/effect across modules, hidden coupling,
+cross-domain analogies. Structural import edges are *not* duplicated here — those live in
+the code graph.
+
+```markdown
+### reservation-lock ⇄ money-precision
+- Type: shared-invariant
+- Why it matters: both protect no-double-sale
+- Evidence: src/vault.ts, src/pricing.ts
+- Confidence: high
+- Non-obvious: yes
+```
+
+---
+
+## 5. The context index — `ai-context/context-index.json`
 
 A unified document set assembled from the symbol map, the code graph, and the relationship
-layer. Every document is a discrete unit with an empty embedding slot:
+layer, with empty embedding slots so it can be loaded into a vector or graph database later
+without changing the on-disk format.
 
 ```jsonc
 {
   "schema": "contextum-context-index/v1",
   "embedding": { "model": null, "dimensions": null, "status": "pending" },
   "documents": [
-    { "id": "file:src/store.js", "kind": "file", "level": 0, "text": "...", "tags": ["store"], "embedding": null },
-    { "id": "rel:1", "kind": "relationship", "level": 0, "non_obvious": true, "embedding": null },
-    { "id": "triad:1", "kind": "triad", "level": 1, "derived": true, "closed": false, "embedding": null }
+    { "id": "file:src/store.js", "kind": "file",         "level": 0, "embedding": null },
+    { "id": "rel:1",             "kind": "relationship", "level": 0, "non_obvious": true },
+    { "id": "triad:1",           "kind": "triad",        "level": 1, "derived": true, "closed": false }
   ],
   "adjacency": { "nodes": ["..."], "edges": [{ "from": "...", "to": "...", "weight": 1 }] }
 }
 ```
 
-- **Leaf documents** (level 0): files and authored relationships.
-- **Triads** (level 1): higher-order bridges derived **algebraically** from pairwise
-  relationships that share a node — no embedding calls. Marked `closed` (closed triangle)
-  vs. open bridge.
-- **No database is created.** The empty `embedding` slots make the export ready to feed into
-  a vector or graph database later. `--format ndjson` emits one document per line for bulk
-  ingest.
+**Triads** (level 1) are higher-order bridges derived *algebraically* from pairwise
+relationships that share a node — no embedding calls. `--format ndjson` emits one document
+per line for bulk ingest.
 
 ---
 
-## Multi-Agent Center
+## 6. The multi-agent center — `.contextum/`
 
-`contextum center init` creates a local coordination directory for multi-agent work:
+```bash
+contextum center init --cwd <repo-path>
+```
 
 ```text
 .contextum/
-  README.md
-  center.yml
-  project.json
-  tasks.json
-  agents.json
-  locks.json
-  execution-state.json
-  events.jsonl
-  schemas/
+  README.md               # how this directory is meant to be used
+  .gitignore              # keeps volatile runtime state out of Git
+  center.yml              # configuration and policies
+  project.json            # portable project identity
+  mcp.json                # how agents should connect to this project
+  tasks.json              # cooperative task board
+  agents.json             # active agent sessions
+  locks.json              # cooperative leases over paths / context areas
+  execution-state.json    # compact state for long-running runs
+  events.jsonl            # append-only history: claims, handoffs, reviews, notes
+  schemas/                # JSON Schema for each entity
 ```
 
-Use this as operational state for agents: task ownership, active sessions, temporary locks, and handoff notes. Keep durable engineering facts in `AGENTS.md` and `ai-context/`; `.contextum/` is the coordination layer, not the source of truth.
+The split matters:
 
-The local store is project-scoped by default: every repository gets its own `.contextum/project.json` and state files. This avoids memory bleed between unrelated projects and keeps the same behavior on Windows, Ubuntu, and macOS.
+```text
+AGENTS.md + ai-context/   durable, reviewed engineering memory   → in Git, code-reviewed
+.contextum/               operational state for the current work → runtime, mostly ignored
+```
 
-The center also writes JSON Schemas for the operational entities under `.contextum/schemas/`: task, agent, lock, event, and execution state. These are intentionally small, file-based primitives that can later be exposed through MCP without changing the repository's source-of-truth documents.
+### Entities
+
+**Task** — a unit of work an agent can claim and move through a lifecycle.
+
+```jsonc
+{
+  "id": "task_360ec0f2-…",
+  "title": "Add rate limiting",
+  "status": "review",              // open | claimed | blocked | review | done | cancelled
+  "owner_agent_id": "claude-a",
+  "priority": "high",
+  "context_areas": ["integrations", "change-impact"],
+  "affected_paths": ["src/router.js"],
+  "acceptance_checks": ["429 returned after the limit", "existing tests pass"]
+}
+```
+
+**Agent** — a registered session: which tool, which profile, which worktree, which task.
+
+**Lock** — a cooperative lease over a path or context area, optionally with `ttl_seconds`.
+
+**Event** — append-only history, including handoffs between agents.
+
+**Execution state** — see below.
 
 ---
 
-## Commands
+## 7. Execution state — compact memory for long runs
 
-| Command | What it does |
-| --- | --- |
-| `contextum init` | Generate `ai-context/`, write canonical `AGENTS.md` + common tool wrappers, and build the code graph/symbol map. `--agent-pack` also writes the Claude skills + role prompts. Idempotent. |
-| `contextum generate` | Generate/update the `ai-context/` documents only. |
-| `contextum agents` | Write `AGENTS.md` (source of truth) + every tool-specific wrapper. |
-| `contextum skills` | Write the Claude-compatible orientation skill and role prompts under `.claude/`. |
-| `contextum graph` | Build the dependency graph (`code-graph.mmd` + `.json`) and the symbol map (`code-symbols.json`). |
-| `contextum index` | Build the vector-DB-ready context index (`context-index.json`). No database required. |
-| `contextum setup` | Interactive one-command setup: generate Contextum files, create `.contextum/`, install project MCP config, and recommend the Claude author + Codex reviewer workflow. |
-| `contextum center init` | Create `.contextum/` local coordination state for multi-agent tasks, sessions, locks, and handoffs. |
-| `contextum mcp install` | Write/update project `.mcp.json` so MCP-capable agents can connect to the same repository memory. Existing entries are preserved; `contextum` is only replaced with `--force`. |
-| `contextum mcp` | Start the MCP server over stdio for context, center inspection, task/lock coordination, handoffs, and execution-state updates. |
-| `contextum fill` | Use an AI coding agent to fill the context from the real repository (see below). |
-| `contextum validate` | Validate structure: required files, valid `context.yml`, freshness, diagrams, links. Exits `1` on errors. |
-| `contextum doctor` | Print structure readiness, context quality, agent readiness, trust state, and recommended next actions. |
-
-**Common flags:** `--cwd <dir>` (target repo root), `--force` (overwrite existing files).
-`contextum index` supports `--format json|ndjson`. `contextum center init` and `contextum mcp install` support `--force`. `contextum setup` supports `--yes` for non-interactive installs. `contextum fill` supports
-`--agent claude|codex`, `--agent-command <cmd>`, `--agent-sandbox <mode>`,
-`--bypass-agent-sandbox`, and `--dry-run`.
-
----
-
-## SKILL.state-inspired execution state
-
-Contextum's multi-agent center includes `.contextum/execution-state.json`, inspired by the SKILL.state paper's separation of immutable procedure, mutable execution state, and latest observation.
-
-In Contextum terms:
+Inspired by [SKILL.state](https://arxiv.org/abs/2608.26263), which separates the immutable
+procedure, the mutable execution state, and the latest observation instead of growing the
+transcript forever. In Contextum terms:
 
 ```text
 Immutable procedure       -> AGENTS.md + relevant ai-context files
 Mutable execution state   -> .contextum/execution-state.json
 Latest observation        -> latest tool result / terminal output / review finding
 Long-term repo memory     -> ai-context/
-Operational event history -> .contextum/events.jsonl
+Operational history       -> .contextum/events.jsonl
 ```
 
-The intent is to let long-running agents keep compact, explicit state instead of relying on ever-growing transcript history. Durable facts still move into `ai-context/` after review.
-
-Patch semantics are explicit, so a turn that records one new fact does not erase the rest:
+Patch semantics are explicit, so recording one new fact does not erase the rest:
 
 ```jsonc
-{ "id": "run-1", "patch": { "facts_add": ["router has 4 routes"] } }  // append
-{ "id": "run-1", "patch": { "facts": ["only this"] } }                 // replace
+{ "id": "run-1", "patch": { "facts_add": ["router has 4 routes"] } }   // append + dedupe
+{ "id": "run-1", "patch": { "facts": ["only this"] } }                 // replace the list
 ```
+
+`_add` works for `facts`, `decisions`, `open_questions`, `risks`, `touched_paths`, and
+`next_actions`. Scalars (`current_goal`, `phase`, `latest_observation`, `status`) always
+replace.
 
 ---
 
-## One-command setup
-
-For a new or existing repository, the recommended install path is:
+## 8. The MCP server
 
 ```bash
-contextum setup --cwd <repo-path>
+contextum mcp install --cwd <repo-path>   # write .mcp.json
+contextum mcp --cwd <repo-path>           # run the server over stdio
 ```
 
-For CI, templates, or scripted onboarding:
+`mcp install` picks a launcher that actually resolves on this machine — a global
+`contextum` on `PATH`, `npx contextum` when the repository has it in `node_modules`, or an
+`npx -y contextum@<version>` fallback with a warning. Override it with `--command <path>`
+for a local checkout.
+
+```jsonc
+// .mcp.json — committed, shared by every agent opened in this repository
+{
+  "mcpServers": {
+    "contextum": {
+      "type": "stdio",
+      "command": "contextum",
+      "args": ["mcp", "--cwd", "${CLAUDE_PROJECT_DIR:-.}"]
+    }
+  }
+}
+```
+
+### Read tools
+
+| Tool | Purpose |
+| --- | --- |
+| `contextum.repo_status` | Does this repo have `AGENTS.md`, `ai-context/`, `.contextum/`? |
+| `contextum.list_context_files` | Which context files this server may read. |
+| `contextum.shared_memory_status` | The project's shared-memory model and connection rule. |
+| `contextum.search_context` | Lexical search over context files and the context index. |
+| `contextum.read_context` | Read one whitelisted `AGENTS.md` / `ai-context/` file. |
+| `contextum.list_tasks` | The task board. |
+| `contextum.list_agents` | Active agent sessions. |
+| `contextum.list_locks` | Held locks. |
+| `contextum.list_events` | Recent events and handoffs, with filters. |
+| `contextum.read_execution_state` | Compact state of long-running runs. |
+
+### Write tools
+
+| Tool | Purpose |
+| --- | --- |
+| `contextum.create_task` | Put work on the board. |
+| `contextum.claim_task` | Take ownership; exactly one agent can win. |
+| `contextum.update_task` | Move through `open → claimed → review → done` (or `blocked`/`cancelled`). |
+| `contextum.release_task` | Hand work back to the board. |
+| `contextum.register_agent` | Register or heartbeat a session; only the fields you pass are updated. |
+| `contextum.acquire_lock` | Lease a path or context area, optionally with a TTL. |
+| `contextum.release_lock` | Release a lease by id or scope. |
+| `contextum.record_handoff` | Leave a message for the next agent. |
+| `contextum.patch_execution_state` | Update compact run state. |
+
+**Boundaries.** Reads are limited to a path whitelist — `read_context` refuses anything
+outside `AGENTS.md` and `ai-context/`, including traversal attempts. Writes only ever touch
+`.contextum/`; the server never rewrites product source or source-of-truth context files,
+and every write appends an event.
+
+**Protocol behaviour.** Tools carry `annotations` (`readOnlyHint`, `destructiveHint`,
+`idempotentHint`) so a client can gate the mutating ones. Unknown tools and malformed calls
+return JSON-RPC errors; business failures such as *"task is already claimed"* return
+`isError: true` tool results, so the model reads the reason and self-corrects. Notifications
+are never answered, and the protocol version is negotiated with the client.
+
+---
+
+## 9. Worked example — Claude authors, Codex reviews
+
+The recommended two-agent loop, expressed entirely through shared memory.
+
+**Setup once, in the repository:**
 
 ```bash
 contextum setup --cwd <repo-path> --yes
 ```
 
-The setup command is intentionally conservative. It generates the context layer, installs the agent pack, creates `.contextum/`, and writes project MCP config. Existing Contextum-managed files are skipped unless `--force` is provided. Existing unrelated `.mcp.json` servers are preserved.
+**1. The author registers and takes the work.**
 
-If you only need MCP config after a manual install:
+```jsonc
+{ "name": "contextum.register_agent",
+  "arguments": { "id": "claude-a", "tool": "claude", "profile": "primary",
+                 "role": "implementer", "worktree": "rate-limiting" } }
 
-```bash
-contextum mcp install --cwd <repo-path>
+{ "name": "contextum.create_task",
+  "arguments": { "title": "Add rate limiting", "priority": "high",
+                 "affected_paths": ["src/router.js"],
+                 "acceptance_checks": ["429 after the limit", "tests pass"] } }
+
+{ "name": "contextum.claim_task",
+  "arguments": { "task_id": "task_360ec0f2-…", "agent_id": "claude-a" } }
 ```
 
-Use `--force` only when you intentionally want to replace the existing `contextum` server entry in `.mcp.json`.
+**2. It leases the risky area so the other agent stays out of it.**
 
-The installer writes a launcher that actually resolves on the current machine: a global
-`contextum` when it is on `PATH`, `npx contextum` when the repository has it in
-`node_modules`, and an `npx -y contextum@<version>` fallback with a warning otherwise.
-Pass `--command <path>` to point at a local checkout instead.
-
-## Tango workflow: Claude authors, Codex reviews
-
-Contextum recommends the two-agent review loop by default:
-
-1. Claude implements the change in the repo or in a Claude worktree.
-2. Codex reviews the actual diff in a review-only stance. Findings come first, with file/line references.
-3. Claude or the original author fixes the findings.
-4. Accepted architecture or memory changes are recorded into `ai-context/`; transient task state stays in `.contextum/`.
-
-Both agents should use the same Contextum MCP server for the same repository:
-
-```bash
-contextum mcp --cwd <repo-path>
+```jsonc
+{ "name": "contextum.acquire_lock",
+  "arguments": { "scope": "src/router.js", "owner_agent_id": "claude-a",
+                 "reason": "editing the request pipeline", "ttl_seconds": 3600 } }
 ```
 
-Claude Code can consume the project `.mcp.json` written by `contextum mcp install`. Codex or any other MCP-capable reviewer should be configured to use the same stdio command when its client supports MCP. The important invariant is that all reviewers and authors read and update the same project-scoped memory: `AGENTS.md`, `ai-context/`, and `.contextum/`.
-
-## Multi-account Claude setup
-
-For two Claude Code accounts on one machine, keep account state separate but point both accounts to the same project MCP server.
-
-Example local commands:
+A second agent asking for the same scope gets a tool error, not a silent overwrite:
 
 ```text
-claude    -> primary Claude account
-claude-b  -> secondary Claude account using CLAUDE_CONFIG_DIR
+Lock src/router.js is already held by claude-a
 ```
 
-Both profiles should connect to the same MCP server command for the repository. `contextum mcp install --cwd <repo-path>` writes the project `.mcp.json` entry for Claude Code; manual clients can use:
+**3. It keeps run state compact instead of re-reading its own transcript.**
 
-```bash
-contextum mcp --cwd <repo-path>
+```jsonc
+{ "name": "contextum.patch_execution_state",
+  "arguments": { "id": "rate-limiting",
+                 "patch": { "current_goal": "add rate limiting",
+                            "facts_add": ["router has 4 routes", "store is an in-memory Map"],
+                            "next_actions_add": ["ask Codex to review"] } } }
 ```
 
-Result:
+**4. It hands off for review.**
+
+```jsonc
+{ "name": "contextum.update_task",
+  "arguments": { "task_id": "task_360ec0f2-…", "agent_id": "claude-a", "status": "review" } }
+
+{ "name": "contextum.record_handoff",
+  "arguments": { "message": "Diff ready: token bucket in src/router.js, 429 on overflow",
+                 "task_id": "task_360ec0f2-…",
+                 "from_agent_id": "claude-a", "to_agent_id": "codex-reviewer" } }
+```
+
+**5. The reviewer picks it up from the same store.**
+
+```jsonc
+{ "name": "contextum.list_events", "arguments": { "type": "handoff.recorded", "limit": 5 } }
+{ "name": "contextum.read_execution_state", "arguments": {} }
+{ "name": "contextum.read_context", "arguments": { "path": "ai-context/change-impact.md" } }
+```
+
+The reviewer reviews the diff, then records the outcome:
+
+```jsonc
+{ "name": "contextum.record_handoff",
+  "arguments": { "message": "2 findings: limiter is per-process; no test for the 429 path",
+                 "task_id": "task_360ec0f2-…",
+                 "from_agent_id": "codex-reviewer", "to_agent_id": "claude-a" } }
+```
+
+**6. The author fixes, closes, and promotes durable facts.**
+
+```jsonc
+{ "name": "contextum.update_task",
+  "arguments": { "task_id": "task_360ec0f2-…", "agent_id": "claude-a", "status": "done" } }
+
+{ "name": "contextum.release_lock",
+  "arguments": { "scope": "src/router.js", "owner_agent_id": "claude-a" } }
+```
+
+Anything worth remembering beyond this task — a new contract, a decision, a non-obvious
+relationship — moves into `ai-context/` and goes through normal code review. `.contextum/`
+keeps only what is true right now.
+
+> A non-owner cannot close someone else's task: `update_task` from `codex` on a task owned
+> by `claude-a` is rejected with *"Task … is owned by claude-a, not codex"*.
+
+---
+
+## 10. Two Claude accounts on one machine
+
+Keep the accounts separate, point both at the same project server.
 
 ```text
-primary Claude account   -> same repo MCP -> same ai-context/ + .contextum/
-secondary Claude account -> same repo MCP -> same ai-context/ + .contextum/
+claude    -> primary account   (default Claude config)
+claude-b  -> secondary account (CLAUDE_CONFIG_DIR-based profile)
 ```
 
-The accounts do not share credentials or Claude session history. They share only repository memory exposed by MCP:
+Both read the project `.mcp.json` written by `contextum mcp install`, so:
+
+```text
+primary Claude account   ─┐
+secondary Claude account ─┼─→ same repo MCP ─→ same ai-context/ + .contextum/
+Codex / other reviewer   ─┘
+```
+
+They share **repository memory only** — never credentials or session history:
 
 ```text
 Durable memory      -> AGENTS.md + ai-context/
@@ -299,83 +510,12 @@ Search/index layer  -> ai-context/context-index.json
 
 ---
 
-## Cross-platform storage model
+## 11. Concurrency and durability
 
-Contextum uses a file-backed, project-scoped store by default:
-
-```text
-<repo-path>/.contextum/
-```
-
-This is intentionally portable across Windows, Ubuntu, and macOS because all runtime code uses Node path APIs and the MCP server is started with an explicit repository root:
-
-```bash
-contextum mcp --cwd <repo-path>
-```
-
-Project memory separation is based on repository-local state, not a global shared database. Two repositories never share tasks, locks, agents, or execution state unless a future deployment explicitly opts into a shared remote backend.
-
-Default storage rule:
-
-```text
-one repository -> one .contextum/ store -> one project memory namespace
-```
-
-`center init` also writes `.contextum/.gitignore`, so configuration and schemas stay in
-Git while volatile runtime state does not:
-
-```text
-tracked:  center.yml, project.json, mcp.json, schemas/, README.md
-ignored:  tasks.json, agents.json, locks.json, execution-state.json, events.jsonl, .lock/
-```
-
-`project.json` holds a stable random project id and no machine paths, so the file survives
-being committed and cloned onto another operating system.
-
----
-
-## MCP foundation
-
-`contextum mcp` starts a Model Context Protocol server over stdio:
-
-```bash
-contextum mcp --cwd <repo-path>
-```
-
-Initial tools:
-
-| Tool | Purpose |
-| --- | --- |
-| `contextum.repo_status` | Summarize whether `AGENTS.md`, `ai-context/`, and `.contextum/` exist. |
-| `contextum.list_context_files` | List whitelisted context files available to read. |
-| `contextum.shared_memory_status` | Explain the project-scoped shared memory model for connected agents. |
-| `contextum.search_context` | Search whitelisted context files and `context-index.json`; a single incidental term match is filtered out as noise. |
-| `contextum.read_context` | Read a whitelisted `AGENTS.md` or `ai-context/` file. |
-| `contextum.list_tasks` | Read `.contextum/tasks.json`. |
-| `contextum.list_agents` | Read `.contextum/agents.json`. |
-| `contextum.list_locks` | Read `.contextum/locks.json`. |
-| `contextum.list_events` | Read recent events and handoffs back from `.contextum/events.jsonl`. |
-| `contextum.read_execution_state` | Read `.contextum/execution-state.json`. |
-| `contextum.create_task` | Create a task and append a task event. |
-| `contextum.claim_task` | Claim a task with ownership conflict checks. |
-| `contextum.update_task` | Move a task through `open → claimed → review → done` (or `blocked`/`cancelled`) and update its metadata. |
-| `contextum.release_task` | Release a task back to open state. |
-| `contextum.register_agent` | Register or refresh an agent session. |
-| `contextum.acquire_lock` | Acquire a cooperative lock over a path or context area. |
-| `contextum.release_lock` | Release a cooperative lock by id or scope. |
-| `contextum.record_handoff` | Append a handoff event. |
-| `contextum.patch_execution_state` | Upsert compact execution state; `<field>` replaces a list, `<field>_add` appends to it. |
-
-Read operations cover `AGENTS.md`, `ai-context/`, and `.contextum/`. Write operations are intentionally narrow and only modify `.contextum/`; they do not rewrite product source or source-of-truth context files.
-
-Tools carry `annotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`) so a client can gate the mutating ones. Protocol errors (unknown tool, malformed call) come back as JSON-RPC errors; business-logic failures such as "task is already claimed" come back as `isError: true` tool results, so the model can read the reason and self-correct.
-
-### Concurrency and durability
-
-Two agents run as two processes against one repository, so every mutation takes a
+Agents run as separate processes against one repository, so every mutation takes a
 single-writer lock (`.contextum/.lock`, an atomic `mkdir`) and every file is replaced
-atomically (temp file + rename). That is what makes `claim_task` and `acquire_lock`
-actual mutual exclusion rather than an advisory check:
+atomically (temp file + rename). That is what makes `claim_task` and `acquire_lock` real
+mutual exclusion rather than an advisory check:
 
 ```text
 20 parallel create_task across 4 processes -> 20 persisted, 0 lost
@@ -383,112 +523,92 @@ actual mutual exclusion rather than an advisory check:
 2 simultaneous locks on one scope          -> exactly 1 holder
 ```
 
-A stale lock left by a crashed process is broken automatically after 30s.
+A lock left behind by a crashed process is broken automatically after 30 seconds. If a state
+file is ever damaged by something outside Contextum, tools fail with a recovery hint rather
+than a raw parse error:
 
----
-
-## Research-informed design principles
-
-Contextum's multi-agent direction follows a few current agent-runtime patterns:
-
-1. **Explicit execution state over transcript accumulation.** SKILL.state argues that long-running agents should receive an immutable procedure, current structured execution state, and latest observation, rather than an ever-growing dialogue history. Contextum maps this to `AGENTS.md` + `ai-context/` as the procedure/context layer and `.contextum/execution-state.json` as compact mutable run state.
-2. **Durable memory and operational state are separate.** Durable repository facts live in Git-reviewed `ai-context/`. Task claims, active agents, locks, handoffs, and current execution state live in `.contextum/`.
-3. **MCP writes are narrow and repo-local.** MCP standardizes access to tools, resources, and prompts. Contextum read tools expose only whitelisted context files, while write tools only update `.contextum/` operational state.
-4. **Writes require explicit commands and conflict checks.** MCP write tools are narrow: create or claim a task, release a task, register an agent, acquire or release a lock, append a handoff, or patch execution state. Each write records an event in `.contextum/events.jsonl`.
-5. **Shared operational memory is untrusted input.** Tasks, handoffs, and execution state
-   are written by one agent and read by another, so they are data, not instructions. Agents
-   should treat `.contextum/` content as untrusted; reviewed facts belong in `ai-context/`,
-   which passes through Git review.
-6. **Human control remains part of the workflow.** MCP tool use can expose powerful actions, so Contextum keeps source-of-truth changes in files that can be reviewed through normal Git diff and code review.
-
-References:
-
-- SKILL.state: Scalable Long-Horizon Agent Skills: https://arxiv.org/abs/2608.26263
-- Model Context Protocol specification: https://modelcontextprotocol.io/specification/2025-06-18
-- MCP server tools specification: https://modelcontextprotocol.io/specification/2025-06-18/server/tools
-- Claude Code MCP documentation: https://code.claude.com/docs/en/mcp
-
----
-
-## Safe adoption on existing AI-driven repos
-
-Contextum is designed to be installed on repositories that already have AI instructions, Claude skills, Cursor rules, or an existing `ai-context/` layer.
-
-Default behavior is conservative:
-
-- existing files are skipped, not overwritten
-- `--force` is required to replace existing files
-- `AGENTS.md` remains the canonical instruction file when present
-- tool-specific files such as `CLAUDE.md`, `CODEX.md`, and Cursor rules should be wrappers, not competing sources of truth
-- existing `.claude/agents` and `.claude/skills` files are preserved unless `--force` is used
-- unknown or conflicting facts should be recorded in `ai-context/unknowns.md`, not guessed
-
-Recommended adoption flow for an existing AI-driven repository:
-
-```bash
-contextum doctor --cwd <repo-path>
-contextum init --cwd <repo-path> --agent-pack
-contextum validate --cwd <repo-path>
-git diff
+```text
+.contextum/tasks.json is not valid JSON (…).
+Restore it from Git or reset it with `contextum center init --force`.
 ```
 
-Review the diff before committing. If the repository already had strong AI rules, keep them and use Contextum to add missing structure around them.
+---
+
+## 12. Storage model and Git hygiene
+
+The store is file-backed and **project-scoped**: one repository, one `.contextum/`, one
+memory namespace. Two repositories never share tasks, locks, agents, or execution state.
+
+```text
+one repository -> one .contextum/ store -> one project memory namespace
+```
+
+`center init` writes `.contextum/.gitignore`, so configuration is reviewable and runtime
+noise is not:
+
+```text
+tracked:  README.md, center.yml, project.json, mcp.json, schemas/
+ignored:  tasks.json, agents.json, locks.json, execution-state.json, events.jsonl, .lock/
+```
+
+`project.json` holds a stable random id and no machine paths, so it survives being committed
+and cloned onto another operating system. All runtime code uses Node path APIs and the
+server is started with an explicit `--cwd`, which is what keeps Linux, macOS, and Windows on
+the same behaviour.
 
 ---
 
-## Filling the context from real code
+## 13. Safe adoption on an existing AI-driven repo
 
-`contextum init` writes honest templates with `TODO`s. `contextum fill` hands an AI coding
-agent a strict prompt and lets it turn those templates into accurate, source-verified
-context:
+Contextum is designed to be installed on repositories that already have AI instructions,
+Claude skills, Cursor rules, or their own `ai-context/`.
+
+Default behaviour is conservative:
+
+- existing files are **skipped**, not overwritten; `--force` is required to replace them
+- `AGENTS.md` stays the canonical instruction file when it already exists
+- existing `.claude/agents` and `.claude/skills` files are preserved
+- an existing `.mcp.json` keeps its other servers; the `contextum` entry is only replaced
+  with `--force`
+- conflicting facts go to `ai-context/unknowns.md` instead of being guessed
+
+Recommended flow:
 
 ```bash
-contextum fill --agent claude          # drive Claude Code
-contextum fill --agent codex           # drive Codex
+contextum doctor --cwd <repo-path>     # see where you stand first
+contextum setup  --cwd <repo-path>
+contextum validate --cwd <repo-path>
+git diff                               # review before committing
+```
+
+Running `setup` on the bundled example, which already ships a full context layer, skips all
+35 existing files and adds only the center and the MCP config.
+
+---
+
+## 14. Filling the context from real code
+
+`init` writes honest templates with `TODO`s. `fill` hands an AI coding agent a strict prompt
+and lets it turn those templates into accurate, source-verified context:
+
+```bash
+contextum fill --agent claude            # drive Claude Code
+contextum fill --agent codex             # drive Codex
 contextum fill --agent claude --dry-run  # print the prompt, run nothing
 ```
 
-The fill prompt:
-
-- discovers and reconciles **existing repository docs** (README, `docs/`, ADRs, OpenAPI, …),
-- points the agent at the **code graph + symbol map** for navigation,
-- forbids fabrication — unknowns stay `UNKNOWN` and go to `unknowns.md`,
-- asks the agent to author **non-obvious relationships**, and
-- keeps the trust state at `auto_generated` until a human reviews it.
+The fill prompt discovers and reconciles **existing repository docs** (README, `docs/`,
+ADRs, OpenAPI), points the agent at the code graph and symbol map for navigation, forbids
+fabrication (unknowns stay `UNKNOWN` and go to `unknowns.md`), asks for non-obvious
+relationships, and keeps the trust state at `auto_generated` until a human reviews it.
 
 After a successful fill, the code graph and context index are rebuilt automatically.
 
 ---
 
-## What gets created
+## 15. Try it on the bundled example
 
-```
-AGENTS.md                      # canonical instructions (source of truth)
-CLAUDE.md / CODEX.md / GEMINI.md
-.cursor/rules/contextum.mdc
-.github/copilot-instructions.md
-.aiassistant/rules.md
-.claude/
-  skills/context-orientation/SKILL.md
-  agents/{context-auditor,implementation-agent,reviewer,context-maintainer}.md
-ai-context/
-  context.yml
-  README.md  code-map.md  business-features.md  integrations.md
-  runtime.md  data-model.md  architecture-flows.md  change-impact.md
-  repository-boundaries.md  decisions.md  relationships.md  unknowns.md
-  lifecycle.md  freshness.md  agent-workflows.md
-  context-index.json           # vector-DB-ready export
-  diagrams/
-    runtime-flow.mmd  dependency-graph.mmd  blast-radius.mmd
-    code-graph.mmd  code-graph.json  code-symbols.json
-```
-
----
-
-## Try it on the bundled example
-
-This repository ships `examples/task-api` — a small, zero-dependency REST API — with a full
-Contextum layer applied, so you can see every artifact end to end:
+`examples/task-api` is a small zero-dependency REST API with the full layer applied:
 
 ```bash
 cd examples/task-api
@@ -496,20 +616,44 @@ node src/server.js               # the app runs
 curl -s localhost:3000/tasks     # it works
 
 contextum doctor                 # 100% structure, agent-ready
+contextum validate
 cat ai-context/context-index.json
+```
+
+Talk to the MCP server directly, without any client:
+
+```bash
+printf '%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"contextum.search_context","arguments":{"query":"in-memory store tasks","limit":2}}}' \
+  | contextum mcp --cwd .
 ```
 
 ---
 
-## How `doctor` scores
+## 16. How `doctor` scores
 
 Contextum separates **structure** from **trust** — having files is not proof of quality:
 
 - **Structure readiness** — are the required files present?
 - **Context quality** — penalizes unfilled `TODO` placeholders. An honest `UNKNOWN`
   (e.g. `Owner: UNKNOWN`) is *not* a defect; only `context.yml` field placeholders are.
-- **Agent readiness** — `AGENTS.md`, core wrappers, orientation skill, and role prompts.
+- **Agent readiness** — `AGENTS.md`, core wrappers, orientation skill, role prompts.
 - **Trust state** — `auto_generated` until a human reviews and promotes it.
+
+---
+
+## 17. Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Claude Code shows the server as failed | The launcher in `.mcp.json` is not installed | `npm i -g contextum`, or `contextum mcp install --force --command <path>` |
+| `Missing .contextum. Run 'contextum center init' first.` | Center not created in this repo | `contextum center init --cwd <repo-path>` |
+| `Timed out waiting for the Contextum center lock` | Another agent is mid-write, or a lock was orphaned | Wait — stale locks clear after 30s; remove `.contextum/.lock` only if no agent is running |
+| `Task … is already claimed by …` | Another agent owns the work | Pick another task, or ask the owner to `release_task` |
+| `Path is not readable through Contextum MCP` | Path outside the read whitelist | Read it with your normal file tools; MCP only serves `AGENTS.md` and `ai-context/` |
+| `.contextum/tasks.json is not valid JSON` | The file was edited or damaged outside Contextum | Restore from Git, or `contextum center init --force` |
+| `.mcp.json already defines contextum` | Idempotent guard | Add `--force` if you really want to replace the entry |
 
 ---
 
@@ -519,8 +663,18 @@ Contextum separates **structure** from **trust** — having files is not proof o
 2. **Be lightweight.** Updating context must be cheaper than rediscovering the repo.
 3. **Be tool-compatible.** One canonical file, many thin wrappers.
 4. **Be repository-first.** Git is the source of truth.
-5. **Be runtime-aware.** Operational behavior, not just code structure.
-6. **Be extensible.** Profiles and adapters per stack and language.
+5. **Separate durable memory from operational state.** Reviewed facts in `ai-context/`,
+   current work in `.contextum/`.
+6. **Make writes narrow and auditable.** Every MCP write is scoped to `.contextum/` and
+   records an event.
+7. **Treat shared operational memory as untrusted input.** Tasks, handoffs, and execution
+   state are written by one agent and read by another — data, never instructions.
+8. **Keep the human in the loop.** Everything that matters is a file you can read in a diff.
+
+References: [SKILL.state](https://arxiv.org/abs/2608.26263) ·
+[MCP specification](https://modelcontextprotocol.io/specification/2025-06-18) ·
+[MCP tools](https://modelcontextprotocol.io/specification/2025-06-18/server/tools) ·
+[Claude Code MCP](https://code.claude.com/docs/en/mcp)
 
 ---
 
@@ -538,12 +692,14 @@ node dist/cli.js doctor --cwd /path/to/some/repo
 
 ## Status & roadmap
 
-Available today: the context layer, the agent pack, the dependency graph + symbol map, the
-relationship layer, the vector-DB-ready context index (with algebraically-derived triads),
-and the agent-driven `fill` workflow.
+Available today: the context layer, the agent pack, the dependency graph and symbol map,
+the relationship layer, the vector-DB-ready context index with algebraically-derived
+triads, the agent-driven `fill` workflow, the multi-agent center with a
+concurrency-safe store, and the MCP server with 19 tools.
 
 Deliberately **not** built yet: the database itself. The context index ships with empty
 embedding slots so it can later be loaded into a vector or graph database without changing
-the on-disk format.
+the on-disk format. The MCP server targets protocol revision `2025-06-18`; moving to a newer
+revision is a transport-level change, not a feature gap.
 
 MIT licensed.
