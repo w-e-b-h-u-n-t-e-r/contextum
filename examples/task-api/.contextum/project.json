@@ -1,0 +1,8 @@
+{
+  "schema": "contextum-project/v1",
+  "id": "project_00f2bb05-5e90-40c5-80b7-910b67cd2f2b",
+  "name": "task-api",
+  "storage": "repo-local-json",
+  "created_at": "2026-09-02",
+  "generated_by": "contextum 0.1.0"
+}

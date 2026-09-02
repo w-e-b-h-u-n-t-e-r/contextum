@@ -1,0 +1,29 @@
+schema: contextum-center/v1
+generated_by: contextum 0.1.0
+source_of_truth:
+  - AGENTS.md
+  - ai-context/
+storage:
+  mode: repo-local-json
+  project: .contextum/project.json
+mcp:
+  server: contextum mcp --cwd <repo-path>
+  sharing: configure every Claude profile and MCP-capable Codex reviewer for the same repository with the same MCP server
+state_files:
+  tasks: .contextum/tasks.json
+  agents: .contextum/agents.json
+  locks: .contextum/locks.json
+  execution_state: .contextum/execution-state.json
+  events: .contextum/events.jsonl
+schemas:
+  task: .contextum/schemas/task.schema.json
+  agent: .contextum/schemas/agent.schema.json
+  lock: .contextum/schemas/lock.schema.json
+  event: .contextum/schemas/event.schema.json
+  execution_state: .contextum/schemas/execution-state.schema.json
+policies:
+  task_claiming: cooperative
+  lock_scope: repo_relative_path_or_context_area
+  concurrency: single-writer file lock (.contextum/.lock) with atomic replace
+  context_updates: ai-context/freshness.md changelog required after behavior or architecture changes
+  review_flow: author -> reviewer -> fixes -> context update

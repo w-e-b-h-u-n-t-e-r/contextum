@@ -12,6 +12,10 @@ import { graph } from "./commands/graph.js";
 import { skills } from "./commands/skills.js";
 import { fill } from "./commands/fill.js";
 import { index } from "./commands/indexCmd.js";
+import { centerInit } from "./commands/center.js";
+import { runMcpServer } from "./mcp/server.js";
+import { installMcp } from "./commands/mcpInstall.js";
+import { setup } from "./commands/setup.js";
 
 interface CommonFlags {
   cwd?: string;
@@ -24,6 +28,11 @@ interface FillFlags extends CommonFlags {
   agentCommand?: string;
   agentSandbox?: string;
   bypassAgentSandbox?: boolean;
+}
+
+interface SetupFlags extends CommonFlags {
+  yes?: boolean;
+  command?: string;
 }
 
 const rootOf = (flags: CommonFlags) => path.resolve(flags.cwd ?? process.cwd());
@@ -87,6 +96,40 @@ cli
   .option("--cwd <dir>", "Target repository root")
   .option("--force", "Overwrite existing files")
   .action((flags: CommonFlags) => skills({ root: rootOf(flags), force: flags.force }));
+
+cli
+  .command("center <action>", "Create or manage the local multi-agent coordination center")
+  .option("--cwd <dir>", "Target repository root")
+  .option("--force", "Overwrite existing files")
+  .action((action: string, flags: CommonFlags) => {
+    if (action !== "init") {
+      throw new Error(`Unsupported center action: ${action}. Use init.`);
+    }
+    return centerInit({ root: rootOf(flags), force: flags.force });
+  });
+
+cli
+  .command("mcp [action]", "Start or install the Contextum MCP server")
+  .option("--cwd <dir>", "Target repository root")
+  .option("--force", "Overwrite the contextum server entry in .mcp.json")
+  .option("--command <cmd>", "Launcher to write into .mcp.json instead of the detected one")
+  .action((action: string | undefined, flags: SetupFlags) => {
+    if (action === undefined) return runMcpServer({ root: rootOf(flags) });
+    if (action === "install") {
+      return installMcp({ root: rootOf(flags), force: flags.force, command: flags.command });
+    }
+    throw new Error(`Unsupported mcp action: ${action}. Use install, or omit action to start the server.`);
+  });
+
+cli
+  .command("setup", "Interactive one-command Contextum setup")
+  .option("--cwd <dir>", "Target repository root")
+  .option("--force", "Overwrite existing Contextum-managed files")
+  .option("--yes", "Run non-interactively")
+  .option("--command <cmd>", "Launcher to write into .mcp.json instead of the detected one")
+  .action((flags: SetupFlags) =>
+    setup({ root: rootOf(flags), force: flags.force, yes: flags.yes, command: flags.command }),
+  );
 
 cli
   .command("fill", "Use an AI coding agent to fill ai-context from the real repository")
