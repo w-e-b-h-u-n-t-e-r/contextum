@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextum.dev/schemas/execution-state.schema.json",
+  "title": "Contextum Execution State",
+  "type": "object",
+  "required": [
+    "id",
+    "status",
+    "updated_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agent_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "active",
+        "blocked",
+        "review",
+        "done"
+      ]
+    },
+    "phase": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "current_goal": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "latest_observation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "touched_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  }
+}

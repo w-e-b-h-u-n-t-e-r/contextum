@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextum.dev/schemas/lock.schema.json",
+  "title": "Contextum Cooperative Lock",
+  "type": "object",
+  "required": [
+    "id",
+    "scope",
+    "owner_agent_id",
+    "created_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope_type": {
+      "enum": [
+        "path",
+        "context_area",
+        "task",
+        "other"
+      ]
+    },
+    "owner_agent_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reason": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

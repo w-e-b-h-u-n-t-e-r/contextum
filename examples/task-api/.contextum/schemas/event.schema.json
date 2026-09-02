@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextum.dev/schemas/event.schema.json",
+  "title": "Contextum Event",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "created_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "enum": [
+        "task.created",
+        "task.claimed",
+        "task.released",
+        "task.completed",
+        "agent.registered",
+        "lock.acquired",
+        "lock.released",
+        "handoff.recorded",
+        "review.recorded",
+        "note.added"
+      ]
+    },
+    "task_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agent_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  }
+}

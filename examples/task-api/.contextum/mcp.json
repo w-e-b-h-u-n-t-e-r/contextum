@@ -1,0 +1,35 @@
+{
+  "schema": "contextum-mcp-config/v1",
+  "server": {
+    "name": "contextum",
+    "command": "npx",
+    "args": [
+      "-y",
+      "contextum@0.1.0",
+      "mcp",
+      "--cwd",
+      "${CLAUDE_PROJECT_DIR:-.}"
+    ]
+  },
+  "multi_agent_access": {
+    "rule": "Add this same MCP server to every local author or reviewer profile that should share project memory.",
+    "claude_primary": "default Claude config",
+    "claude_secondary": "CLAUDE_CONFIG_DIR-based secondary profile",
+    "codex_reviewer": "same stdio MCP command when the Codex client supports MCP",
+    "tango": "Claude authors, Codex reviews the diff, author fixes findings"
+  },
+  "shared_memory": {
+    "durable_repo_memory": [
+      "AGENTS.md",
+      "ai-context/"
+    ],
+    "operational_memory": [
+      ".contextum/tasks.json",
+      ".contextum/agents.json",
+      ".contextum/locks.json",
+      ".contextum/execution-state.json",
+      ".contextum/events.jsonl"
+    ],
+    "vector_ready_index": "ai-context/context-index.json"
+  }
+}

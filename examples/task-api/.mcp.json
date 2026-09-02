@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "contextum": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "contextum@0.1.0",
+        "mcp",
+        "--cwd",
+        "${CLAUDE_PROJECT_DIR:-.}"
+      ]
+    }
+  }
+}

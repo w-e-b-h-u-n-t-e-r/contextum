@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contextum.dev/schemas/task.schema.json",
+  "title": "Contextum Task",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "status",
+    "created_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "open",
+        "claimed",
+        "blocked",
+        "review",
+        "done",
+        "cancelled"
+      ]
+    },
+    "owner_agent_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "role": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "priority": {
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "critical"
+      ]
+    },
+    "context_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "affected_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "acceptance_checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  }
+}
