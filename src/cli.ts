@@ -156,6 +156,8 @@ cli.version(CONTEXTUM_VERSION);
 async function main(): Promise<void> {
   try {
     cli.parse(process.argv, { run: false });
+    // cac already printed help/version during parsing.
+    if (cli.options.help || cli.options.version) return;
     if (!cli.matchedCommand && cli.args.length === 0) {
       cli.outputHelp();
       return;

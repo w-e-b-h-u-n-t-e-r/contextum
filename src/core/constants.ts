@@ -3,7 +3,7 @@ export const DIAGRAMS_DIR = `${CONTEXT_DIR}/diagrams`;
 export const CANONICAL_AGENT_FILE = "AGENTS.md";
 export const CONTEXT_YAML_FILE = "context.yml";
 
-export const CONTEXTUM_VERSION = "0.1.0";
+export const CONTEXTUM_VERSION = "0.2.0";
 export const CONTEXT_SCHEMA_VERSION = "1.0";
 
 export const CONTEXT_MARKDOWN_FILES = [
