@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import os from "node:os";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "fs-extra";
 import { init } from "../src/commands/init.js";
@@ -31,6 +32,7 @@ import {
   CANONICAL_AGENT_FILE,
   CONTEXT_DIR,
   CONTEXT_MARKDOWN_FILES,
+  CONTEXTUM_VERSION,
 } from "../src/core/constants.js";
 
 let root: string;
@@ -82,6 +84,23 @@ function toolData<T = Record<string, unknown>>(response: McpResponseLike | null 
   expect(payload?.isError).toBe(false);
   return payload?.structuredContent as T;
 }
+
+const repoFile = (name: string) => fileURLToPath(new URL(`../${name}`, import.meta.url));
+
+describe("package metadata", () => {
+  it("keeps the advertised version in sync with package.json", async () => {
+    // The constant is what `--version` prints and what the npx fallback in
+    // .mcp.json pins, so drift here ships a config nobody can install.
+    const pkg = await fs.readJson(repoFile("package.json"));
+    expect(CONTEXTUM_VERSION).toBe(pkg.version);
+  });
+
+  it("ships a license file for the declared license", async () => {
+    const pkg = await fs.readJson(repoFile("package.json"));
+    expect(pkg.license).toBe("MIT");
+    expect(await fs.pathExists(repoFile("LICENSE"))).toBe(true);
+  });
+});
 
 describe("detectRepo", () => {
   it("detects a TypeScript node repo with capabilities", async () => {

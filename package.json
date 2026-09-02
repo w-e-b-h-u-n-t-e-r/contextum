@@ -1,7 +1,7 @@
 {
   "name": "contextum",
-  "version": "0.1.0",
-  "description": "Persistent engineering memory for AI-native software development. Contextum builds and validates a structured, machine-readable AI Context Layer for any repository.",
+  "version": "0.2.0",
+  "description": "AI context layer and multi-agent coordination center for any repository, exposed over MCP.",
   "type": "module",
   "bin": {
     "contextum": "dist/cli.js"
@@ -12,27 +12,43 @@
   "engines": {
     "node": ">=18"
   },
+  "license": "MIT",
+  "author": "w-e-b-h-u-n-t-e-r",
+  "homepage": "https://github.com/w-e-b-h-u-n-t-e-r/contextum#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/w-e-b-h-u-n-t-e-r/contextum.git"
+  },
+  "bugs": {
+    "url": "https://github.com/w-e-b-h-u-n-t-e-r/contextum/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "start": "node dist/cli.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "keywords": [
     "ai",
     "context",
     "agents",
     "engineering-memory",
+    "multi-agent",
+    "mcp",
+    "model-context-protocol",
     "cli",
     "agents.md",
-    "codex",
     "claude",
+    "codex",
     "cursor",
     "copilot"
   ],
-  "license": "MIT",
   "dependencies": {
     "cac": "^6.7.14",
     "dependency-cruiser": "^16.4.0",
